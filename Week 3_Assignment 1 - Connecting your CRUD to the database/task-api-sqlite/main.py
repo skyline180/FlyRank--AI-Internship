@@ -111,3 +111,38 @@ def create_task(task: Task, db: sqlite3.Connection = Depends(get_db)):
     db.commit()
     
     return {"id": cursor.lastrowid, "title": task.title.strip(), "done": task.done}
+
+
+
+@app.put("/tasks/{task_id}", response_model=TaskResponse, tags=["Tasks"])
+def update_task(task_id: int, task: Task, db: sqlite3.Connection = Depends(get_db)):
+    """Update a task's title and/or done status"""
+    if not task.title or not task.title.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="title is required and cannot be empty"
+        )
+        
+    cursor = db.cursor()
+    cursor.execute(
+        "UPDATE tasks SET title = ?, done = ? WHERE id = ?", 
+        (task.title.strip(), int(task.done), task_id)
+    )
+    
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+        
+    db.commit()
+    return {"id": task_id, "title": task.title.strip(), "done": task.done}
+
+@app.delete("/tasks/{task_id}", status_code=204, tags=["Tasks"])
+def delete_task(task_id: int, db: sqlite3.Connection = Depends(get_db)):
+    """Delete a task"""
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+        
+    db.commit()
+    return
