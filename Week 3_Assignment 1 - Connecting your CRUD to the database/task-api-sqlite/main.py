@@ -92,3 +92,22 @@ def get_task(task_id: int, db: sqlite3.Connection = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
         
     return {"id": row["id"], "title": row["title"], "done": bool(row["done"])}
+
+
+@app.post("/tasks", response_model=TaskResponse, status_code=201, tags=["Tasks"])
+def create_task(task: Task, db: sqlite3.Connection = Depends(get_db)):
+    """Create a new task"""
+    if not task.title or not task.title.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="title is required and cannot be empty"
+        )
+        
+    cursor = db.cursor()
+    cursor.execute(
+        "INSERT INTO tasks (title, done) VALUES (?, ?)", 
+        (task.title.strip(), int(task.done))
+    )
+    db.commit()
+    
+    return {"id": cursor.lastrowid, "title": task.title.strip(), "done": task.done}
