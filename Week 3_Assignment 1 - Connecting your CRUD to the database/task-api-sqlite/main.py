@@ -15,7 +15,6 @@ class TaskResponse(BaseModel):
     title: str
     done: bool
 
-# --- STAGE 0: Create & Seed Database ---
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
@@ -27,7 +26,6 @@ def init_db():
             )
         """)
         
-        # Seed your specific 3 tasks only if the table is empty
         cursor.execute("SELECT COUNT(*) FROM tasks")
         if cursor.fetchone()[0] == 0:
             seed_tasks = [
@@ -40,7 +38,6 @@ def init_db():
 
 init_db()
 
-# Dependency to get DB connection
 def get_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row 
@@ -49,7 +46,6 @@ def get_db():
     finally:
         conn.close()
 
-# --- Info Endpoints (Carried over from your W2 code) ---
 @app.get("/", tags=["Info"])
 def root():
     """Get API information"""
