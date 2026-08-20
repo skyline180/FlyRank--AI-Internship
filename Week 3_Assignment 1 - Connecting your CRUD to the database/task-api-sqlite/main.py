@@ -59,3 +59,36 @@ def root():
 def health():
     """Health check endpoint"""
     return {"status": "ok"}
+
+
+@app.get("/tasks", response_model=List[TaskResponse], tags=["Tasks"])
+def list_tasks(done: Optional[bool] = None, search: Optional[str] = None, db: sqlite3.Connection = Depends(get_db)):
+    """List all tasks. Optional filters: done=true/false, search=<text>"""
+    cursor = db.cursor()
+    
+    query = "SELECT * FROM tasks WHERE 1=1"
+    params = []
+    
+    if done is not None:
+        query += " AND done = ?"
+        params.append(1 if done else 0)
+        
+    if search:
+        query += " AND title LIKE ?"
+        params.append(f"%{search}%")
+        
+    cursor.execute(query, params)
+    
+    return [{"id": r["id"], "title": r["title"], "done": bool(r["done"])} for r in cursor.fetchall()]
+
+@app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["Tasks"])
+def get_task(task_id: int, db: sqlite3.Connection = Depends(get_db)):
+    """Get a single task by ID"""
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+    row = cursor.fetchone()
+    
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+        
+    return {"id": row["id"], "title": row["title"], "done": bool(row["done"])}
