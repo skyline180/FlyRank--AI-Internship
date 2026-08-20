@@ -1,1 +1,1 @@
-# FlyRank--AI-Internship
+# FlyRankAI-Internship
